@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"fmt"
 	"net/http"
 	"startup-anas/helper"
 	"startup-anas/user"
@@ -122,4 +123,50 @@ func (h *userHandler) CheckEmailAvailablity(c *gin.Context){
 	c.JSON(http.StatusUnprocessableEntity, response)
 	return
 
+}
+
+func (h *userHandler) UploudAvatar( c*gin.Context){
+	
+	// input dari user
+	// simpan gambarnya di folder "images/"
+	// di service kita panggil repo
+	// JWT (sementara harcode, seakan2 user yang login ID = 1)
+	// repo ambil data dari user yang ID = 1
+	// repo update data user simpan lokasi file
+
+	file, err := c.FormFile("avatar")
+
+	if err != nil {
+		data := gin.H{"is_uplouded": false}
+		response := helper.APIResponse("Failed to uploud avatar image", http.StatusBadRequest, "error", data)
+		c.JSON(http.StatusBadRequest, response)
+		return
+	}
+	//harusnya dapat JWT, nanti
+	userID := 1
+
+	//images/1-namafile.png
+	path := fmt.Sprintf("images/%d-%s", userID, file.Filename)
+
+	err = c.SaveUploadedFile(file, path )
+	if err != nil {
+		data := gin.H{"is_uplouded": false}
+		response := helper.APIResponse("Failed to uploud avatar image", http.StatusBadRequest, "error", data)
+		c.JSON(http.StatusBadRequest, response)
+		return
+	}
+	
+
+	_, err = h.userService.SaveAvatar(userID, path)
+
+	if err != nil {
+		data := gin.H{"is_uplouded": false}
+		response := helper.APIResponse("Failed to uploud avatar image", http.StatusBadRequest, "error", data)
+		c.JSON(http.StatusBadRequest, response)
+		return
+	}
+
+	data := gin.H{"is_uplouded": true}
+		response := helper.APIResponse("avatar succesfuly uplouded", http.StatusBadRequest, "succes", data)
+		c.JSON(http.StatusOK, response)
 }

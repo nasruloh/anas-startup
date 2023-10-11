@@ -24,37 +24,7 @@ func main() {
 	userRepository := user.NewRepository(db)
 	userService := user.NewService(userRepository)
 
-	// userByEmail, err := userRepository.FindByEmail("nasruloh@gmail.com")
-	// if err != nil{
-	// 	fmt.Println(err.Error())
-	// } 
-	// if (userByEmail.ID == 0) {
-	// 	fmt.Println("user tidak di temukan")
-	// } else{
-	// 	fmt.Println(userByEmail.Name)
-	// }
-
-	//test service
-	// input := user.LoginInput{
-	// 	Email: "nasruloh62@gmail.com",
-	// 	Password: "password",
-	// }
-	// user, err := userService.Login(input)
-	// if err != nil {
-	// 	fmt.Println("terjadi kesalahan")
-	// 	fmt.Println(err.Error())
-	// }
-
-	// fmt.Println(user.Email)
-	// fmt.Println(user.Name)
-
-	// userInput := user.RegisterUserInput{}
-	// userInput.Name = "tes simpan darfi service"
-	// userInput.Email = "contoh@gmail.com"
-	// userInput.Occupation = "anakband"
-	// userInput.Password = "password"
-
-	// userService.RegisterUser(userInput)
+	
 
 	userHandler := handler.NewUserHandler(userService)
 	router := gin.Default()
@@ -63,6 +33,7 @@ func main() {
 	api.POST("/users", userHandler.RegisterUser)
 	api.POST("/sessions", userHandler.Login)
 	api.POST("/email_checker", userHandler.CheckEmailAvailablity)
+	api.POST("/avatars", userHandler.UploudAvatar)
 	router.Run()
 	
 }
