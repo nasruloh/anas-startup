@@ -1,0 +1,110 @@
+[1mdiff --git a/handler/user.go b/handler/user.go[m
+[1mindex 14aeae3..7d6242b 100644[m
+[1m--- a/handler/user.go[m
+[1m+++ b/handler/user.go[m
+[36m@@ -80,4 +80,46 @@[m [mfunc (h *userHandler) Login(c *gin.Context){[m
+ 	formatter := user.FormatUser(loggedinUser, "tokentokentoken")[m
+ 	response:= helper.APIResponse("Succesfuly loggedin", http.StatusOK, "succes", formatter)[m
+ 	c.JSON(http.StatusOK, response)[m
+[32m+[m[32m}[m[41m[m
+[32m+[m[41m[m
+[32m+[m[32mfunc (h *userHandler) CheckEmailAvailablity(c *gin.Context){[m[41m[m
+[32m+[m	[32m// ada input email dari user[m[41m[m
+[32m+[m	[32m// input email di ampping ke struct input[m[41m[m
+[32m+[m	[32m// strcut input di-pasing ke service[m[41m[m
+[32m+[m	[32m// service akan memanggil repostory - email sudah ada atau belum[m[41m[m
+[32m+[m	[32m//repository - db[m[41m[m
+[32m+[m[41m[m
+[32m+[m	[32mvar input user.CheckEmailInput[m[41m[m
+[32m+[m[41m[m
+[32m+[m	[32merr := c.ShouldBindJSON(&input)[m[41m[m
+[32m+[m	[32mif err != nil {[m[41m[m
+[32m+[m		[32merrors := helper.FormatValidationError(err)[m[41m[m
+[32m+[m		[32merrorMessage := gin.H{"errors":errors}[m[41m[m
+[32m+[m[41m[m
+[32m+[m		[32mresponse:= helper.APIResponse("Email checking failed", http.StatusUnprocessableEntity, "error", errorMessage)[m[41m[m
+[32m+[m		[32mc.JSON(http.StatusUnprocessableEntity, response)[m[41m[m
+[32m+[m		[32mreturn[m[41m[m
+[32m+[m	[32m}[m[41m[m
+[32m+[m[41m[m
+[32m+[m	[32mIsEmailAvailable, err := h.userService.IsEmailAvailable(input)[m[41m[m
+[32m+[m[41m[m
+[32m+[m	[32mif err != nil {[m[41m[m
+[32m+[m		[32merrorMessage := gin.H{"errors": "server error"}[m[41m[m
+[32m+[m		[32mresponse:= helper.APIResponse("Email checking failed", http.StatusUnprocessableEntity, "error", errorMessage)[m[41m[m
+[32m+[m		[32mc.JSON(http.StatusUnprocessableEntity, response)[m[41m[m
+[32m+[m		[32mreturn[m[41m[m
+[32m+[m	[32m}[m[41m[m
+[32m+[m	[32mdata := gin.H{[m[41m[m
+[32m+[m		[32m"is_available": IsEmailAvailable,[m[41m[m
+[32m+[m	[32m}[m[41m[m
+[32m+[m	[32mmetaMessage := "email has been registered"[m[41m [m
+[32m+[m[41m[m
+[32m+[m	[32mif IsEmailAvailable {[m[41m[m
+[32m+[m		[32mmetaMessage = "email is available"[m[41m[m
+[32m+[m	[32m}[m[41m  [m
+[32m+[m[41m[m
+[32m+[m	[32mresponse:= helper.APIResponse(metaMessage, http.StatusUnprocessableEntity, "error", data)[m[41m[m
+[32m+[m	[32mc.JSON(http.StatusUnprocessableEntity, response)[m[41m[m
+[32m+[m	[32mreturn[m[41m[m
+[32m+[m[41m[m
+ }[m
+\ No newline at end of file[m
+[1mdiff --git a/main.go b/main.go[m
+[1mindex bf892a5..442bf88 100644[m
+[1m--- a/main.go[m
+[1m+++ b/main.go[m
+[36m@@ -62,6 +62,7 @@[m [mfunc main() {[m
+ 	api := router.Group("/api/v1")[m
+ 	api.POST("/users", userHandler.RegisterUser)[m
+ 	api.POST("/sessions", userHandler.Login)[m
+[32m+[m	[32mapi.POST("/email_checker", userHandler.CheckEmailAvailablity)[m[41m[m
+ 	router.Run()[m
+ 	[m
+ }[m
+[1mdiff --git a/user/input.go b/user/input.go[m
+[1mindex c6e80bc..b670417 100644[m
+[1m--- a/user/input.go[m
+[1m+++ b/user/input.go[m
+[36m@@ -10,4 +10,8 @@[m [mtype RegisterUserInput struct {[m
+ type LoginInput struct {[m
+ 	Email    string `json:"email" binding:"required,email"`[m
+ 	Password string `json:"password" binding:"required"`[m
+[32m+[m[32m}[m[41m[m
+[32m+[m[41m[m
+[32m+[m[32mtype CheckEmailInput struct {[m[41m[m
+[32m+[m	[32mEmail string `json: "email" binding: "required",email`[m[41m[m
+ }[m
+\ No newline at end of file[m
+[1mdiff --git a/user/service.go b/user/service.go[m
+[1mindex 9c7d817..3638612 100644[m
+[1m--- a/user/service.go[m
+[1m+++ b/user/service.go[m
+[36m@@ -9,6 +9,7 @@[m [mimport ([m
+ type Service interface {[m
+ 	RegisterUser(input RegisterUserInput) (User, error)[m
+ 	Login(input LoginInput)(User, error)[m
+[32m+[m	[32mIsEmailAvailable(input CheckEmailInput) (bool, error)[m[41m[m
+ }[m
+ [m
+ type service struct {[m
+[36m@@ -59,5 +60,17 @@[m [mfunc (s *service ) Login(input LoginInput)(User, error){[m
+ 	return user, nil[m
+ }[m
+ [m
+[31m-//maping struct input ke struct user[m
+[31m-//simpan struct user melalui repository[m
+[32m+[m[32mfunc (s *service) IsEmailAvailable(input CheckEmailInput) (bool, error) {[m[41m[m
+[32m+[m	[32memail := input.Email[m[41m[m
+[32m+[m[41m[m
+[32m+[m	[32muser, err := s.repository.FindByEmail(email)[m[41m[m
+[32m+[m[41m[m
+[32m+[m	[32mif err != nil {[m[41m[m
+[32m+[m	[32m   return false, err[m[41m[m
+[32m+[m	[32m}[m[41m[m
+[32m+[m[41m[m
+[32m+[m	[32mif user.ID == 0 {[m[41m[m
+[32m+[m		[32mreturn true, nil[m[41m[m
+[32m+[m	[32m}[m[41m[m
+[32m+[m	[32mreturn false, nil[m[41m[m
+[32m+[m[32m}[m[41m[m
