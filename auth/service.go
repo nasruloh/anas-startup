@@ -14,7 +14,7 @@ type Service interface {
 type jwtService struct {
 }
 
-var SECRET_KEY = []byte("anas-startup-secret-key") //jangan sampai orang lain tau, contoh
+var SECRET_KEY = []byte("BWA_anas_s3cr3t") //jangan sampai orang lain tau, contoh
 
 func NewService() *jwtService{
 	return &jwtService{}
@@ -22,17 +22,17 @@ func NewService() *jwtService{
 
 func (s *jwtService) GenerateToken(userID int) (string, error) {
 	claim := jwt.MapClaims{}
-	claim["user-id"] = userID
+	claim["user_id"] = userID
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claim)
 
-	signToken, err := token.SignedString(SECRET_KEY)
+	signedToken, err := token.SignedString(SECRET_KEY)
 
 	if err != nil{
-		return signToken, err
+		return signedToken, err
 	}
 
-	return signToken, nil
+	return signedToken, nil
 
 }
 

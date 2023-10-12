@@ -143,7 +143,7 @@ func (h *userHandler) CheckEmailAvailablity(c *gin.Context){
 
 }
 
-func (h *userHandler) UploudAvatar( c*gin.Context){
+func (h *userHandler) UploadAvatar( c*gin.Context){
 	
 	// input dari user
 	// simpan gambarnya di folder "images/"
@@ -161,7 +161,8 @@ func (h *userHandler) UploudAvatar( c*gin.Context){
 		return
 	}
 	//harusnya dapat JWT, nanti
-	userID := 1
+	currentUser := c.MustGet("currentUser").(user.User)
+	userID := currentUser.ID// sesuai dengan ID
 
 	//images/1-namafile.png
 	path := fmt.Sprintf("images/%d-%s", userID, file.Filename)
